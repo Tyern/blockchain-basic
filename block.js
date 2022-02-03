@@ -1,13 +1,15 @@
-const { GENESIS_DATA }  = require("./config")
+const { GENESIS_DATA, MINE_RATE, INITIAL_DIFFICULTY }  = require("./config")
 const cryptoHash = require("./crypto-hash")  
 
 // The block class 
 class Block {
-    constructor({timestamp, lastHash, hash, data}) {
+    constructor({timestamp, lastHash, hash, data, nonce, difficulty}) {
         this.timestamp = timestamp
         this.data = data
         this.hash = hash
         this.lastHash = lastHash
+        this.nonce = nonce
+        this.difficulty = difficulty
     }
 
     static genesis() { // return the genesis block
@@ -15,15 +17,45 @@ class Block {
     }
 
     static mineBlock({lastBlock, data}) { // return the new block to be added to the chain
-        const timestamp = Date.now()
-        return new this(
+        let nonce = 0
+        let hash = ""
+        let timestamp = Date.now()
+        let now = Date.now()
+        let difficulty = Block.adjustDifficulty({originalBlock: lastBlock, 
+            timestamp})
+        while (hash.substring(0, difficulty) !== "0".repeat(difficulty)){
+            timestamp = Date.now()
+            nonce += 1
+            difficulty = Block.adjustDifficulty({originalBlock: lastBlock, 
+                timestamp})
+            hash = cryptoHash(
+                timestamp, 
+                lastBlock.hash,
+                data,
+                difficulty,
+                nonce
+            )
+        }
+        return new Block(
             {
-                timestamp,
+                timestamp: timestamp,
                 lastHash: lastBlock.hash,
+                hash: hash,
                 data: data,
-                hash: cryptoHash(timestamp, lastBlock.hash, data)
+                nonce: nonce,
+                difficulty: Block.adjustDifficulty({originalBlock:lastBlock, 
+                                                    timestamp}),
             }
         )
+    }
+
+    static adjustDifficulty({originalBlock, timestamp}) {
+        const {difficulty} = originalBlock;
+        if (timestamp - originalBlock.timestamp < MINE_RATE) {
+            return difficulty + 1
+        } else {
+            return difficulty - 1
+        }
     }
 }
 
