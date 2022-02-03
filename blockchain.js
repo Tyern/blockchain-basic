@@ -42,7 +42,7 @@ class Blockchain {
                 return false
             }
 
-            const validatedHash = cryptoHash(block.timestamp, actualLastHash, block.data)
+            const validatedHash = cryptoHash(block.timestamp, actualLastHash, block.data, block.nonce, block.difficulty)
 
             if (block.hash !== validatedHash) {
                 return false
