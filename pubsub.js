@@ -2,6 +2,7 @@ const redis = require("redis");
 
 const CHANNELS = {
     TEST: "TEST",
+    BLOCKCHAIN: "BLOCKCHAIN"
 }
 
 // Currently not working;;;
@@ -39,22 +40,16 @@ const credentials = {
 }
 
 class PubSub {
-    constructor() {
+    constructor({ blockchain }) {
+        this.blockchain = blockchain;
         this.pubnub = new PubNub(credentials);
 
-        this.pubnub.subscribe({
-            channels: Object.values(CHANNELS)
-        })
-        this.pubnub.addListener(this.listener());
+        this.subscribeToChannels();
     }
 
     listener() {
         return {
-            message: messageObject => {
-                const {channel, message} = messageObject;
-
-                console.log(`message received Channel ${channel}, Message ${message}`)
-            }
+            message: this.handleMessage
         }
     }
 
@@ -63,13 +58,42 @@ class PubSub {
             channel, message
         })
     }
+
+    handleMessage(messageObject) {
+        const {channel, message} = messageObject
+        console.log(`message received Channel ${channel}, Message ${message}`)
+
+        if (channel === CHANNELS.BLOCKCHAIN) {
+            const parsedMessage = JSON.parse(message)
+
+            this.blockchain.replaceChain(parsedMessage)
+        }
+    }
+
+    subscribeToChannels() {
+        this.pubnub.subscribe({
+            channels: Object.values(CHANNELS)
+        })
+        this.pubnub.addListener(this.listener())
+    }
+
+    broadcastChain() {
+        this.publish({ 
+            channel: CHANNELS.BLOCKCHAIN, 
+            message: JSON.stringify(this.blockchain.chain)
+        })
+    }
 }
 
-// const testPubSub = new PubSub();
+// const testPubSub = new PubSub({blockchain: 1});
 
 // testPubSub.publish({
 //     channel: CHANNELS.TEST, 
 //     message: "foo"
+// })
+// testPubSub.publish({
+//     channel: CHANNELS.TEST, 
+//     message: "foo1"
 // })
 
 module.exports = PubSub;
