@@ -15,9 +15,6 @@ const pubsub = new PubSub({ blockchain: blockchain})
 const DEFAULT_PORT = 3000;
 const ROOT_NODE_ADDRESS =  `http://localhost:${DEFAULT_PORT}`;
 
-// broadcast chain with one node genesis block only
-setTimeout(() => pubsub.broadcastChain(), 1000)
-
 app.get("/api/blocks", (req, res) => {
     res.json(blockchain.chain);
 })
@@ -25,6 +22,7 @@ app.get("/api/blocks", (req, res) => {
 app.post("/api/mine", (req, res) => {
     const {data} = req.body;
 
+    console.info(`mine with data: ${data}`);
     blockchain.addBlock({ data });
 
     pubsub.broadcastChain()
@@ -56,5 +54,7 @@ if (process.env.GENERATE_PEER_PORT === 'true') {
 const PORT = PEER_PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
     console.log(`Running app on Port = ${PORT}`)
-    syncChains()
+    if (PORT !== DEFAULT_PORT) {
+        syncChains()
+    }
 })

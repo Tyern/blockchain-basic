@@ -37,15 +37,21 @@ class PubSub {
 
     subscribeToChannel() {
         Object.values(CHANNELS).forEach(channel => {
-            this.subscriber.subscribe(channel,
-                (message, incoming_channel) => {
-                    this.handleMessage(incoming_channel, message);
-                });
+            this.subscriber.subscribe(channel, (message, incoming_channel) => {
+                this.handleMessage(incoming_channel, message);
+            });
         })
     }
 
     publish({channel, message}) {
-        this.publisher.publish(channel, message)
+        // for not sending message to itself we implement unsubcribe before sending the message and subcribe it later
+        this.subscriber.unsubscribe(channel).then(() => {
+            this.publisher.publish(channel, message).then (() => {
+                this.subscriber.subscribe(channel, (message, incoming_channel) => {
+                    this.handleMessage(incoming_channel, message);
+                });
+            })
+        })
     }
 
     broadcastChain() {
