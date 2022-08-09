@@ -1,8 +1,8 @@
 const express = require("express");
 const { redirect } = require("express/lib/response");
-const Blockchain = require("./blockchain");
+const Blockchain = require("./blockchain/index");
 const bodyParser = require("body-parser");
-const PubSub = require("./pubsub");
+const PubSub = require("./app/pubsub");
 const request = require("request");
 
 const app = express();
