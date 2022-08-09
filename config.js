@@ -11,5 +11,7 @@ const GENESIS_DATA = {
     nonce: 0,
 }
 
+const STARTING_BALANCE = 1000;
 
-module.exports = { GENESIS_DATA, MINE_RATE, INITIAL_DIFFICULTY} 
+
+module.exports = { GENESIS_DATA, MINE_RATE, STARTING_BALANCE} 
