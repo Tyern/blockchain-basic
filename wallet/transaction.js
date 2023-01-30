@@ -31,7 +31,16 @@ class Transaction {
 
     update({senderWallet, recipient, amount}) {
         // if we use createOutputMap, this will erase the previous recipient data
-        this.outputMap[recipient] = amount
+        if (amount > this.outputMap[senderWallet.publicKey]) {
+            throw new Error("Amount exceeds balance")
+        }
+
+        if (Object.keys(this.outputMap).includes(recipient)) {
+            this.outputMap[recipient] = this.outputMap[recipient] + amount
+        } else {
+            this.outputMap[recipient] = amount
+        }
+        
         this.outputMap[senderWallet.publicKey] =
             this.outputMap[senderWallet.publicKey] - amount
         
