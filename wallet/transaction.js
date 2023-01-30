@@ -1,3 +1,4 @@
+const { toHex } = require("elliptic/lib/elliptic/utils");
 const uuid = require("uuid");
 const { verifySignature } = require("../util");
 
@@ -26,6 +27,18 @@ class Transaction {
             address: senderWallet.publicKey,
             signature: senderWallet.sign(outputMap) 
         }
+    }
+
+    update({senderWallet, recipient, amount}) {
+        // if we use createOutputMap, this will erase the previous recipient data
+        this.outputMap[recipient] = amount
+        this.outputMap[senderWallet.publicKey] =
+            this.outputMap[senderWallet.publicKey] - amount
+        
+        this.input = this.createInput({
+            senderWallet, 
+            outputMap:this.outputMap
+        })
     }
 
     static validTransaction(transaction) {
