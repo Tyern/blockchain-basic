@@ -2,15 +2,16 @@ const redis = require("redis");
 
 const CHANNELS = {
     TEST: "TEST",
-    BLOCKCHAIN: "BLOCKCHAIN"
+    BLOCKCHAIN: "BLOCKCHAIN",
+    TRANSACTION: "TRANSACTION",
 }
 
-// Currently not working;;;
 class PubSub {
-    constructor({blockchain}) {
+    constructor({ blockchain, transactionPool }) {
 
         // define blockchain to broadcast
         this.blockchain = blockchain
+        this.transactionPool = transactionPool;
         
         // redis pubsub initialize
         this.publisher = redis.createClient({
@@ -30,9 +31,19 @@ class PubSub {
     handleMessage(channel, message) {
         console.log(`message received Channel ${channel}, Message ${message}`)
         const parsedMessage = JSON.parse(message);
-        if (channel === CHANNELS.BLOCKCHAIN) {
-            this.blockchain.replaceChain(parsedMessage);
-        }
+
+        switch(channel) {
+            case CHANNELS.BLOCKCHAIN:
+                this.blockchain.replaceChain(parsedMessage);
+                break;
+
+            case CHANNELS.TRANSACTION:
+                this.transactionPool.setTransaction(parsedMessage);
+                break;
+
+            default:
+                return;
+          }
     }
 
     subscribeToChannel() {
@@ -58,6 +69,13 @@ class PubSub {
         this.publish({
             channel: CHANNELS.BLOCKCHAIN,
             message: JSON.stringify(this.blockchain.chain)
+        })
+    }
+
+    broadcastTransaction(transaction) {
+        this.publish({
+            channel: CHANNELS.TRANSACTION,
+            message: JSON.stringify(transaction)
         })
     }
 }
