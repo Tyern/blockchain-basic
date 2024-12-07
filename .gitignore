@@ -1,4 +1,7 @@
 node_modules/*
 .dist/*
 .idea/*
+.cache/*
+client/dist/*
+
 package-lock.json
