@@ -2,6 +2,7 @@ const Block = require("./block")
 const {cryptoHash} = require("../util")
 const Transaction = require('../wallet/transaction');
 const { REWARD_INPUT, MINING_REWARD } = require('../config');
+const Wallet = require('../wallet');
 
 class Blockchain {
     constructor() {
@@ -61,7 +62,7 @@ class Blockchain {
     // chain replacement
     // blockchain doesnt exist alone, they link together to form blockchain network
     // get to the unanimous logngest and valid chain
-    replaceChain(chain, onSuccess) {
+    replaceChain(chain, validateTransactions, onSuccess) {
         if (this.chain.length > chain.length) {
             console.log("error:: the incoming chain must be longer")
             return
@@ -72,15 +73,23 @@ class Blockchain {
             return
         }
 
+        if (validateTransactions && !this.validTransactionData({ chain })) {
+            console.error('The incoming chain has invalid data');
+            return;
+        }
+
         if (onSuccess) onSuccess(); // handle callback
         console.log("replaced chain", chain)
         this.chain = chain
     }
 
     validTransactionData({ chain }) {
+
         for (let i=1; i<chain.length; i++) {
+            const transactionSet = new Set();
             const block = chain[i];
             let rewardTransactionCount = 0;
+
             for (let transaction of block.data) {
                 if (transaction.input.address === REWARD_INPUT.address) {
                     rewardTransactionCount += 1;
@@ -96,6 +105,23 @@ class Blockchain {
                     if (!Transaction.validTransaction(transaction)) {
                             console.error('Invalid transaction');
                             return false;
+                    }
+                                        
+                    const trueBalance = Wallet.calculateBalance({
+                        chain: this.chain,
+                        address: transaction.input.address
+                    });
+
+                    if (transaction.input.amount !== trueBalance) {
+                        console.error('Invalid input amount');
+                        return false;
+                    }
+
+                    if (transactionSet.has(transaction)) {
+                        console.error('An identical transaction appears more than once in the block');
+                        return false;
+                    } else {
+                        transactionSet.add(transaction);
                     }
                 }
             }
