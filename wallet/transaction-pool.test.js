@@ -1,9 +1,10 @@
 const Transaction = require('./transaction');
 const TransactionPool = require('./transaction-pool');
 const Wallet = require('./index');
+const Blockchain = require('../blockchain');
 
-    describe('TransactionPool', () => {
-        let transactionPool, transaction, senderWallet;
+describe('TransactionPool', () => {
+    let transactionPool, transaction, senderWallet;
 
     beforeEach(() => {
         senderWallet = new Wallet();
@@ -41,7 +42,7 @@ const Wallet = require('./index');
             validTransactions = [];
             errorMock = jest.fn();
             global.console.error = errorMock;
-            
+
             for (let i=0; i<10; i++) {
                 transaction = new Transaction({
                     senderWallet,
@@ -66,6 +67,34 @@ const Wallet = require('./index');
         it('logs errors for the invalid transactions', () => {
             transactionPool.validTransactions();
             expect(errorMock).toHaveBeenCalled();
+        });
+    });
+
+    describe('clear()', () => {
+        it('clears the transactions', () => {
+            transactionPool.clear();
+            expect(transactionPool.transactionMap).toEqual({});
+        });
+    });
+    describe('clearBlockchainTransactions()', () => {
+        it('clears the pool of any existing blockchain transactions', () => {
+            const blockchain = new Blockchain();
+            const expectedTransactionMap = {};
+            for (let i=0; i<6; i++) {
+                const transaction = new Wallet().createTransaction({
+                    recipient: 'foo', amount: 20
+                });
+
+                transactionPool.setTransaction(transaction);
+                
+                if (i%2===0) {
+                    blockchain.addBlock({ data: [transaction] });
+                } else {
+                    expectedTransactionMap[transaction.id] = transaction;
+                }
+            }
+            transactionPool.clearBlockchainTransactions({ chain: blockchain.chain });
+            expect(transactionPool.transactionMap).toEqual(expectedTransactionMap);
         });
     });
 });
