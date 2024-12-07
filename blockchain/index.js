@@ -59,7 +59,7 @@ class Blockchain {
     // chain replacement
     // blockchain doesnt exist alone, they link together to form blockchain network
     // get to the unanimous logngest and valid chain
-    replaceChain(chain) {
+    replaceChain(chain, onSuccess) {
         if (this.chain.length > chain.length) {
             console.log("error:: the incoming chain must be longer")
             return
@@ -69,6 +69,8 @@ class Blockchain {
             console.log("error:: the incoming chain must be valid")
             return
         }
+
+        if (onSuccess) onSuccess(); // handle callback
         console.log("replaced chain", chain)
         this.chain = chain
     }
